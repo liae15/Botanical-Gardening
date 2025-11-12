@@ -38,7 +38,7 @@ public class Main extends Application
     private ObservableList<String> plantsWant = FXCollections.observableArrayList();
     String clickedOn = "";
     //private Image picture;
-    private static final String API_KEY = "db-SxeNss0Gado3rAnOSmr37GMRalI_QqEqB9BfznF0";
+    private static final String API_KEY = System.getenv("TREFLE_API_KEY");
     private static final String BASE_URL =  "https://trefle.io/api/v1/plants?token=" + API_KEY + "&filter[common_name]=";
 
     private TextField tf;
