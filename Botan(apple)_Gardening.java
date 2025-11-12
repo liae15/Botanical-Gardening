@@ -107,7 +107,6 @@ public class Main extends Application
 
 
     //stage
-    Stage secondaryStage;
     Scene mainScene;
     secondaryStage = new Stage();
 
