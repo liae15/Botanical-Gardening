@@ -1,0 +1,16 @@
+# Maven output
+target/
+
+# Old IntelliJ output
+out/
+
+# IntelliJ project settings
+.idea/
+*.iml
+
+# Operating-system files
+.DS_Store
+Thumbs.db
+
+# Environment variables and secrets
+.env

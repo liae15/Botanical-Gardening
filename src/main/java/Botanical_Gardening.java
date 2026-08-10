@@ -1,43 +1,39 @@
 import javafx.application.Application;
-import javafx.application.Platform;
 import javafx.stage.Stage;
 import javafx.scene.Scene;
-import java.util.*;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
-import javafx.scene.control.SelectionMode;
 import javafx.scene.control.Button;
 import javafx.scene.input.MouseButton; 
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.VBox;
 import javafx.scene.layout.GridPane;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.collections.ObservableList;
 import javafx.collections.FXCollections;
-import javafx.geometry.Pos;
 import javafx.geometry.Insets;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;  
 
 import java.net.URL;
+import java.net.URI;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
-import org.json.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONException;
 
-public class Main extends Application 
+public class Botanical_Gardening extends Application
 { 
-    private ObservableList<String> plantsOwned = FXCollections.observableArrayList();
-    private ObservableList<String> plantsWant = FXCollections.observableArrayList();
-    String clickedOn = "";
-    //private Image picture;
+    private static final Logger LOGGER = Logger.getLogger(Botanical_Gardening.class.getName());
+    private final ObservableList<String> plantsOwned = FXCollections.observableArrayList();
+    private final ObservableList<String> plantsWant = FXCollections.observableArrayList();
     private static final String API_KEY = System.getenv("TREFLE_API_KEY");
     private static final String BASE_URL =  "https://trefle.io/api/v1/plants?token=" + API_KEY + "&filter[common_name]=";
 
@@ -92,7 +88,7 @@ public class Main extends Application
     displayImage = new ImageView();
     GridPane.setConstraints(displayImage, 1, 16);
       
-    //categies taken off display and they required second link API search to "plant"
+    //categories taken off display, and they required second link API search to "plant"
     nativeArea = new Label("Native To: N/A");
     GridPane.setConstraints(nativeArea, 0, 8, 4, 1);
     nativeArea.setStyle("-fx-font: normal 14px 'serif' ");
@@ -110,7 +106,7 @@ public class Main extends Application
     Scene mainScene;
     secondaryStage = new Stage();
 
-    //textfield and search display
+    //text-field and search display
     tf = new TextField("");
     GridPane.setConstraints(tf, 1, 0);
     tf.setStyle("-fx-font: normal 13px 'serif' ");
@@ -140,7 +136,7 @@ public class Main extends Application
     // Event handler for the want button
     addToWantButton.setOnAction(e -> {
         String plantName = tf.getText().trim();
-        if ((!plantName.isEmpty()) && (plantsWant.indexOf(plantName) == -1)) {
+        if ((!plantName.isEmpty()) && (!plantsWant.contains(plantName))) {
             try {
                 plantsWant.add(plantName);
             } catch (NullPointerException ex) {
@@ -159,7 +155,7 @@ public class Main extends Application
     // Event handler for the own button
     addToOwnButton.setOnAction(e -> {
         String plantName = tf.getText().trim();
-        if ((!plantName.isEmpty()) && (plantsOwned.indexOf(plantName) == -1)) {
+        if ((!plantName.isEmpty()) && (!plantsOwned.contains(plantName))) {
             try {
                 plantsOwned.add(plantName);
             } catch (NullPointerException ex) {
@@ -212,13 +208,10 @@ public class Main extends Application
     listVbox.setSpacing(20);
     listsScene = new Scene(listVbox, 500, 500);
     
-    goBack.setOnAction(new EventHandler<ActionEvent>()
-    {
-      @Override public void handle(ActionEvent e) {
-        secondaryStage.hide();
-        tf.setText("");
-        primaryStage.show();
-      }
+    goBack.setOnAction(e -> {
+      secondaryStage.hide();
+      tf.setText("");
+      primaryStage.show();
     });
 
     want.setOnAction(e -> {
@@ -256,7 +249,7 @@ public void listClicks(MouseEvent event, ListView<String> listView) {
                 if(delete) {
                     listView.getItems().remove(pickedPlant);
                 } else {
-                    showNeverMind("Oops!", "Don't worry, your list has been kept the same");
+                    showNeverMind();
                     }
             }
         }
@@ -280,11 +273,11 @@ private boolean showConfirm(String title, String message) {
     return alert.showAndWait().filter(response -> response.getText().equals("OK")).isPresent();
     }
 
-private void showNeverMind(String title, String message) {
+private void showNeverMind() {
     Alert alert = new Alert(Alert.AlertType.INFORMATION);
-    alert.setTitle(title);
+    alert.setTitle("Oops!");
     alert.setHeaderText(null);
-    alert.setContentText(message);
+    alert.setContentText("Don't worry, your list has been kept the same");
     alert.showAndWait();
 }
 
@@ -298,10 +291,13 @@ private void resetView() {
 }
     
 private void fetchInfo() {
-    // Dummy data for demonstration
+    if (API_KEY == null || API_KEY.isBlank()) {
+        showAlert("API key not configured", "Set the TREFLE_API_KEY environment variable to enable plant searches.");
+        return;
+    }
+
     String plant = tf.getText();
     String plantName = getPlantData(plant);
-    System.out.println(plantName);
     if(plantName.equals("Error fetching plant data")) {
         showAlert("Error", "Could not fetch data for this plant.");
         return;
@@ -310,7 +306,7 @@ private void fetchInfo() {
         // JSON work
         JSONObject obj = new JSONObject(plantName);
         JSONArray data = obj.getJSONArray("data");
-        if(data.length() == 0) {
+        if(data.isEmpty()) {
             showAlert("Error", "No information found for this plant.");
             resetView();
             return;
@@ -324,14 +320,11 @@ private void fetchInfo() {
         plantImage = new Image(imageLink, 200, 0, true, false);
         displayImage.setImage(plantImage);
         
-        String plantLink = "https://trefle.io" + plantInfo.getJSONObject("links").getString("plant");
-        //fetchMoreInfo(plantLink);
-        
         scientific.setText("Scientific Name: " + name);
         yearFound.setText("Year Discovered: " + year);
     }
     catch (JSONException e) {
-        e.printStackTrace();
+        LOGGER.log(Level.WARNING, "Could not process the plant search response", e);
         showAlert("Error", "Data cannot be processed");
     }
 }
@@ -347,23 +340,11 @@ public void fetchMoreInfo(String plantLink) {
 
 private String getMoreData(String plantLink) {
     try {
-        URL url = new URL(plantLink + "?token=" + API_KEY);
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        connection.setRequestMethod("GET");
-        BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-        String line;
-        StringBuilder response = new StringBuilder();
-        while ((line = reader.readLine()) != null) {
-            response.append(line);
-            System.out.println(line);
-        }
-        reader.close();
-        connection.disconnect();
-        System.out.println(response.toString());
-        return response.toString();
+        URL url = URI.create(plantLink + "?token=" + API_KEY).toURL();
+        return getString(url);
     } catch (IOException e) {
-        e.printStackTrace();
-        return "Error fetching plant data";
+        LOGGER.log(Level.WARNING, "Could not fetch detailed plant data", e);
+        return "Error fetching detailed plant data";
     }
 }
 
@@ -378,7 +359,7 @@ private void returnMoreInfo(String moreInfo) {
         JSONArray nativePlacesArray = mainPlant.optJSONArray("distribution");
         // end JSON work
         StringBuilder nativePlaces = new StringBuilder("Native To: ");
-        if((nativePlacesArray != null) && (nativePlacesArray.length() > 0)) {
+        if((nativePlacesArray != null) && (!nativePlacesArray.isEmpty())) {
             for(int i = 0; i < nativePlacesArray.length(); i++) {
                 nativePlaces.append(nativePlacesArray.getString(i));
                 if(i < nativePlacesArray.length() -1) {
@@ -400,22 +381,30 @@ private void returnMoreInfo(String moreInfo) {
     farmLength.setText(farmingLength);
 
     } catch (JSONException e) {
-        e.printStackTrace();
+        LOGGER.log(Level.WARNING, "Could not process the detailed plant response", e);
         showAlert("Error", "Data cannot be processed");
     }
 }
 
 public static String getPlantData(String plant) {
-    String searchPlant = "";
+    StringBuilder searchPlant = new StringBuilder();
     for(int i = 0; i < plant.length(); i++) {
-        if(plant.substring(i, i+1).equals(" ")) {
-            searchPlant += "%20";
+        if(plant.charAt(i) == ' ') {
+            searchPlant.append("%20");
         } else {
-            searchPlant += plant.substring(i, i+1);
+            searchPlant.append(plant.charAt(i));
         }
     }
     try {
-        URL url = new URL(BASE_URL + searchPlant);
+        URL url = URI.create(BASE_URL + searchPlant).toURL();
+        return getString(url);
+    } catch (IOException e) {
+        LOGGER.log(Level.WARNING, "Could not fetch plant data", e);
+        return "Error fetching plant data";
+    }
+}
+
+    private static String getString(URL url) throws IOException {
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setRequestMethod("GET");
         BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
@@ -423,18 +412,12 @@ public static String getPlantData(String plant) {
         StringBuilder response = new StringBuilder();
         while ((line = reader.readLine()) != null) {
             response.append(line);
-            System.out.println(line);
         }
         reader.close();
         connection.disconnect();
-        System.out.println(response.toString());
         return response.toString();
-    } catch (IOException e) {
-        e.printStackTrace();
-        return "Error fetching plant data";
     }
-}
-    
+
     public static void main(String[] args) {
         launch(args);
     }
