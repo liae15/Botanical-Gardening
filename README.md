@@ -46,7 +46,7 @@ mvn javafx:run
 
 ## Windows on ARM
 
-JavaFX 21 does not provide native Windows ARM64 artifacts. If you are using a Windows ARM computer, install an x64 version of Java 21 and make sure Maven uses it.
+JavaFX 21 does not provide native Windows ARM64 artifacts. If you are using a Windows ARM computer, install a x64 version of Java 21 and make sure Maven uses it.
 
 In IntelliJ IDEA, choose the x64 Java 21 installation for both the project SDK and the Maven runner JRE. You can also select it for the current PowerShell session:
 
